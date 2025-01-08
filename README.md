@@ -61,6 +61,12 @@ A simple way to get started is simply to try out and follow the example code in 
 - send target angular velocity command
   > .sendTargetVel(motorA_TargetVel, motorB_TargetVel)
 
+- set motor command timeout in ms
+  > .setCmdTimeout(timeout_ms) // sets command timeout in ms
+
+- set motor command timeout in ms
+  > .getCmdTimeout(&timeout_ms) // sets command timeout in ms
+
 - send PWM commands
   > .sendPwm(motorA_PWM, motorB_PWM)
 
