@@ -21,8 +21,8 @@ int main(int argc, char **argv)
 
   bool sendHigh = false;
 
-  float lowTargetVel = -3.142; // in rad/sec
-  float highTargetVel = 3.142; // in rad/sec
+  float lowTargetVel = -4.0; // in rad/sec
+  float highTargetVel = 4.0; // in rad/sec
 
   float angPosA, angPosB;
   float angVelA, angVelB;
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 
   auto ctrlPrevTime = std::chrono::system_clock::now();
   std::chrono::duration<double> ctrlDuration;
-  float ctrlSampleTime = 10.0;
+  float ctrlSampleTime = 5.0;
 
   // std::string port = "/dev/serial/by-path/pci-0000:00:14.0-usb-0:1.4:1.0-port0";
   std::string port = "/dev/ttyUSB0";
@@ -47,6 +47,11 @@ int main(int argc, char **argv)
   }
   motorControl.sendTargetVel(0.0, 0.0); // targetA, targetB
   std::cout << "configuration complete" << std::endl;
+
+  int motor_cmd_timeout_ms = 3000;
+  motorControl.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
+  motorControl.getCmdTimeout(motor_cmd_timeout_ms);
+  std::cout << "motor command timeout: " << motor_cmd_timeout_ms << " ms" << std::endl;
 
   motorControl.sendTargetVel(lowTargetVel, lowTargetVel); // targetA, targetB
   sendHigh = true;
