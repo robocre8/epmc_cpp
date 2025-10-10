@@ -9,7 +9,7 @@
 
 #include "epmc.hpp"
 
-EPMC motorControl;
+EPMC epmc;
 
 void delay_ms(unsigned long milliseconds)
 {
@@ -21,11 +21,8 @@ int main(int argc, char **argv)
 
   bool sendHigh = false;
 
-  float lowTargetVel = -4.0; // in rad/sec
-  float highTargetVel = 4.0; // in rad/sec
-
-  float angPosA, angPosB;
-  float angVelA, angVelB;
+  float lowTargetVel = 0.00; // in rad/sec
+  float highTargetVel = 3.142; // in rad/sec
 
   auto prevTime = std::chrono::system_clock::now();
   std::chrono::duration<double> duration;
@@ -33,27 +30,24 @@ int main(int argc, char **argv)
 
   auto ctrlPrevTime = std::chrono::system_clock::now();
   std::chrono::duration<double> ctrlDuration;
-  float ctrlSampleTime = 5.0;
+  float ctrlSampleTime = 4.0;
 
   // std::string port = "/dev/serial/by-path/pci-0000:00:14.0-usb-0:1.4:1.0-port0";
   std::string port = "/dev/ttyUSB0";
-  motorControl.connect(port);
+  epmc.connect(port);
 
-  // wait for the motorControl to fully setup
-  for (int i = 1; i <= 5; i += 1)
-  {
-    delay_ms(1000);
-    std::cout << "configuring controller: " << i << " sec" << std::endl;
-  }
-  motorControl.sendTargetVel(0.0, 0.0); // targetA, targetB
-  std::cout << "configuration complete" << std::endl;
+  delay_ms(4000);
 
-  int motor_cmd_timeout_ms = 3000;
-  motorControl.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
-  motorControl.getCmdTimeout(motor_cmd_timeout_ms);
+  epmc.writeSpeed(0.0, 0.0);
+  epmc.clearDataBuffer();
+
+  int motor_cmd_timeout_ms = 5000;
+  epmc.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
+  motor_cmd_timeout_ms = epmc.getCmdTimeout();
   std::cout << "motor command timeout: " << motor_cmd_timeout_ms << " ms" << std::endl;
 
-  motorControl.sendTargetVel(lowTargetVel, lowTargetVel); // targetA, targetB
+  epmc.writeSpeed(lowTargetVel, lowTargetVel);
+
   sendHigh = true;
 
   prevTime = std::chrono::system_clock::now();
@@ -67,12 +61,14 @@ int main(int argc, char **argv)
     {
       if (sendHigh)
       {
-        motorControl.sendTargetVel(highTargetVel, highTargetVel); // targetA, targetB
+        epmc.writeSpeed(highTargetVel, highTargetVel);
+
         sendHigh = false;
       }
       else
       {
-        motorControl.sendTargetVel(lowTargetVel, lowTargetVel); // targetA, targetB
+        epmc.writeSpeed(lowTargetVel, lowTargetVel);
+
         sendHigh = true;
       }
 
@@ -84,18 +80,20 @@ int main(int argc, char **argv)
     {
       try
       {
-        motorControl.getMotorsPos(angPosA, angPosB); // gets angPosA, angPosB
-        motorControl.getMotorsVel(angVelA, angVelB); // gets angVelA, angVelB
+        float pos0, pos1;
+        float v0, v1;
+        epmc.readMotorData(pos0, pos1, v0, v1);
+
+        std::cout << "----------------------------------" << std::endl;
+        std::cout << "motorA_readings: [" << pos0 << std::fixed << std::setprecision(4) << "," << v0 << std::fixed << std::setprecision(4) << "]" << std::endl;
+        std::cout << "motorB_readings: [" << pos1 << std::fixed << std::setprecision(4) << "," << v1 << std::fixed << std::setprecision(4) << "]" << std::endl;
+        std::cout << "----------------------------------" << std::endl;
+        std::cout << std::endl;
       }
       catch (...)
       {
-        // std::cout << "motorA_readings: [" << angPosA << std::fixed << std::setprecision(4) << "," << angVelA << std::fixed << std::setprecision(4) << "]" << std::endl;
-        // std::cout << "motorB_readings: [" << angPosB << std::fixed << std::setprecision(4) << "," << angVelB << std::fixed << std::setprecision(4) << "]" << '\n' << std::endl;
+        
       }
-
-      std::cout << "motorA_readings: [" << angPosA << std::fixed << std::setprecision(4) << "," << angVelA << std::fixed << std::setprecision(4) << "]" << std::endl;
-      std::cout << "motorB_readings: [" << angPosB << std::fixed << std::setprecision(4) << "," << angVelB << std::fixed << std::setprecision(4) << "]" << '\n'
-                << std::endl;
 
       prevTime = std::chrono::system_clock::now();
     }
