@@ -1,5 +1,5 @@
-#ifndef EPMC_V2_HPP
-#define EPMC_V2_HPP
+#ifndef EPMC_HPP
+#define EPMC_HPP
 
 #include <iostream>
 #include <iomanip>
