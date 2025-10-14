@@ -21,8 +21,8 @@ int main(int argc, char **argv)
 
   bool sendHigh = false;
 
-  float lowTargetVel = 0.00; // in rad/sec
-  float highTargetVel = 3.142; // in rad/sec
+  float lowTargetVel = -10.00; // in rad/sec
+  float highTargetVel = 10.00; // in rad/sec
 
   auto prevTime = std::chrono::system_clock::now();
   std::chrono::duration<double> duration;
@@ -36,7 +36,11 @@ int main(int argc, char **argv)
   std::string port = "/dev/ttyUSB0";
   epmc.connect(port);
 
-  delay_ms(4000);
+  for (int i=0; i<4; i+=1){
+    delay_ms(1000);
+    std::cout << "configuring controller: " << i+1 << " sec" << std::endl;
+  }
+  
 
   epmc.writeSpeed(0.0, 0.0);
   epmc.clearDataBuffer();
@@ -59,17 +63,24 @@ int main(int argc, char **argv)
     ctrlDuration = (std::chrono::system_clock::now() - ctrlPrevTime);
     if (ctrlDuration.count() > ctrlSampleTime)
     {
-      if (sendHigh)
+      try
       {
-        epmc.writeSpeed(highTargetVel, highTargetVel);
+        if (sendHigh)
+        {
+          epmc.writeSpeed(highTargetVel, highTargetVel);
 
-        sendHigh = false;
+          sendHigh = false;
+        }
+        else
+        {
+          epmc.writeSpeed(lowTargetVel, lowTargetVel);
+
+          sendHigh = true;
+        }
       }
-      else
+      catch(const std::exception& e)
       {
-        epmc.writeSpeed(lowTargetVel, lowTargetVel);
-
-        sendHigh = true;
+        std::cout << "Error occurred: ";
       }
 
       ctrlPrevTime = std::chrono::system_clock::now();
@@ -90,9 +101,9 @@ int main(int argc, char **argv)
         std::cout << "----------------------------------" << std::endl;
         std::cout << std::endl;
       }
-      catch (...)
+      catch (int e)
       {
-        
+        std::cout << "Error occurred: ";
       }
 
       prevTime = std::chrono::system_clock::now();
