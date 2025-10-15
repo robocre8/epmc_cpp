@@ -217,7 +217,7 @@ private:
           return false;
         }
       } catch (const LibSerial::ReadTimeout&) {
-          std::cerr << "[EPMC SERIAL COMM]: Timeout while reading packet4" << payload.size() << " bytes instead of 16." << std::endl;
+          std::cerr << "[EPMC SERIAL COMM]: Timeout while reading packet4" <<  std::endl;
           return false;
       }
 

@@ -24,7 +24,8 @@ int main(int argc, char **argv)
   float lowTargetVel = -10.00; // in rad/sec
   float highTargetVel = 10.00; // in rad/sec
 
-  float p0, p1, v0, v1;
+  float pos0, pos1;
+  float vel0, vel1;
 
   auto prevTime = std::chrono::system_clock::now();
   std::chrono::duration<double> duration;
@@ -93,19 +94,14 @@ int main(int argc, char **argv)
     {
       try
       {
-        float pos0, pos1;
-        float vel0, vel1;
         bool success = epmc.readMotorData(pos0, pos1, vel0, vel1);
 
         if (success){
-          p0 = pos0;
-          p1 = pos1;
-          v0 = vel0;
-          v1 = vel1;
+
         }
         std::cout << "----------------------------------" << std::endl;
-        std::cout << "motorA_readings: [" << p0 << std::fixed << std::setprecision(4) << "," << v0 << std::fixed << std::setprecision(4) << "]" << std::endl;
-        std::cout << "motorB_readings: [" << p1 << std::fixed << std::setprecision(4) << "," << v1 << std::fixed << std::setprecision(4) << "]" << std::endl;
+        std::cout << "motorA_readings: [" << pos0 << std::fixed << std::setprecision(4) << "," << vel0 << std::fixed << std::setprecision(4) << "]" << std::endl;
+        std::cout << "motorB_readings: [" << pos1 << std::fixed << std::setprecision(4) << "," << vel1 << std::fixed << std::setprecision(4) << "]" << std::endl;
         std::cout << "----------------------------------" << std::endl;
         std::cout << std::endl;
       }
