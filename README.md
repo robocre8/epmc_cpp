@@ -1,7 +1,7 @@
-## Easy PID Motor Controller (EPMC) C++ Library
-This library helps communicate with the **`Easy PID Motor Controller Module`** (i.e **`L298N EPMC MODULE`** or a **`CUSTOM EPMC INTERFACE BOARD`**) in your PC or microcomputer linux c++ robotic project (as it depends on the libserial-dev package), with the [epmc_setup_application](https://github.com/samuko-things-company/epmc_setup_application).
+## Easy PID Motor Controller (EPMC) C++ I2C Library
+This library helps communicate with the **`Easy PID Motor Controller Module`**  with your microcomputer linux c++ robotic project via **`I2C protocol`**
 
-> you can use it in your microcomputer robotics project **running on linux** (e.g Raspberry Pi, PC, etc.)
+> you can use it in your microcomputer robotics project **running on linux** (e.g Raspberry Pi, nvidia, etc.)
 
 A simple way to get started is simply to try out and follow the example code in the example folder
 
@@ -9,7 +9,11 @@ A simple way to get started is simply to try out and follow the example code in 
 - install the libserial-dev package
   > sudo apt-get update
   >
-  > sudo apt install libserial-dev
+  > sudo apt install i2c-tools
+
+- For Raspberry Pi, you might need to enable the I2C interface in the configuration.
+  Edit `/boot/firmware/config.txt` (or `/boot/config.txt` on older systems) and add or uncomment the following lines:
+  > dtparam=i2c_arm=on
 
 - Ensure you have the **`EPMC MODULE`** interfaced with your preferred motors, setup the encoder and PID parameters with the **`epmc_setup_application`**.
 
@@ -17,13 +21,12 @@ A simple way to get started is simply to try out and follow the example code in 
 > [!NOTE]  
 > you can use this command if you want to clone the repo:
 > 
-> ```git clone https://github.com/samuko-things-company/epmc_cpp.git```
+> ```git clone -b esp-c3-i2c https://github.com/samuko-things-company/epmc_cpp.git```
 
-- check the serial port the driver is connected to:
+- check the EPMC i2c address:
   ```shell
-  ls /dev/ttyA*
+  sudo i2cdetect -y 1
   ```
-  > you should see /dev/ttyACM0 or /dev/ttyACM1 and so on
 
 - A simple way to get started is simply to try out and follow the example `motor_control.cpp` code.
 
@@ -51,23 +54,13 @@ A simple way to get started is simply to try out and follow the example code in 
   > .connect("port_name or port_path")
   > .clearDataBuffer()
 
-- send target angular velocity command
-  > .writeSpeed(motor0_TargetVel, motor1_TargetVel)
-
-- send PWM command
-  > .writePWM(motor0_PWM, motor1_PWM)
-
-- set motor command timeout
-  > .setCmdTimeout(timeout_ms)
-
-- get motor command timeout
-  > .getCmdTimeout() # returns motor command timeout in ms
-
-- read motors angular position
-  > .readPos() # returns angPos0, angPos1
-
-- read motors angular velocity
-  > .readVel() # returns angVel0, angVel1
-
-- read motorA maximum commandable angular velocity
-  > .getMaxVel(motor_no) # returns maxVel0 or maxVel1 based on the specified motor number
+- other functions
+  > .writeSpeed(float v0, float v1);
+  > .writePWM(int pwm0, int pwm1);
+  > .readMotorData(float &pos0, float &pos1, float &v0, float &v1);
+  > .getMaxVel(int motor_no);
+  > .setCmdTimeout(int timeout_ms);
+  > .getCmdTimeout();
+  > .setPidMode(int mode);
+  > .getPidMode();
+  

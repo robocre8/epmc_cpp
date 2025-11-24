@@ -7,7 +7,7 @@
 
 #include <iomanip>
 
-#include "epmc.hpp"
+#include "epmc_i2c.hpp"
 
 EPMC epmc;
 
@@ -24,8 +24,8 @@ int main(int argc, char **argv)
   float vel = targetVel[1]; // in rad/sec
   float v = 0.0;
 
-  float pos0, pos1, pos2, pos3;
-  float vel0, vel1, vel2, vel3;
+  float pos0, pos1;
+  float vel0, vel1;
 
   auto cmdTime = std::chrono::system_clock::now();
   std::chrono::duration<double> cmdDuration;
@@ -33,11 +33,12 @@ int main(int argc, char **argv)
 
   auto readTime = std::chrono::system_clock::now();
   std::chrono::duration<double> readDuration;
-  float readTimeInterval = 0.01; // 100Hz
+  float readTimeInterval = 0.015;
 
-  std::string port = "/dev/ttyACM0";
-  // std::string port = "/dev/ttyUSB0";
-  epmc.connect(port);
+  int i2cAddress = 85; // 0x55
+  epmc.connect(i2cAddress);
+  // std::string device = "/dev/i2c-1";
+  // epmc.connect(i2cAddress, device);
 
   for (int i=0; i<4; i+=1){
     delay_ms(1000);
