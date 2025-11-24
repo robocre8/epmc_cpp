@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 
   for (int i=0; i<4; i+=1){
     delay_ms(1000);
-    std::cout << "configuring controller: " << i+1 << " sec" << std::endl;
+    std::cout << "waiting for epmc controller: " << i+1 << " sec" << std::endl;
   }
   
 
