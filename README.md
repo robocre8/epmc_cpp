@@ -11,7 +11,7 @@ A simple way to get started is simply to try out and follow the example code in 
   >
   > sudo apt install libserial-dev
 
-- Ensure you have the **`L298N EPMC MODULE`** or a **`CUSTOM EPMC INTERFACE BOARD`** interfaced with your preferred motors, setup the encoder and PID parameters with the **`epmc_setup_application`**.
+- Ensure you have the **`EPMC MODULE`** interfaced with your preferred motors, setup the encoder and PID parameters with the **`epmc_setup_application`**.
 
 - Download (by clicking on the green Code button above) or clone the repo into your PC using **`git clone`**
 > [!NOTE]  
@@ -20,17 +20,10 @@ A simple way to get started is simply to try out and follow the example code in 
 > ```git clone https://github.com/samuko-things-company/epmc_cpp.git```
 
 - check the serial port the driver is connected to:
-  > The best way to select the right serial port (if you are using multiple serial device) is to select by path
   ```shell
-  ls /dev/serial/by-path
+  ls /dev/ttyA*
   ```
-  > you should see a value (if the driver is connected and seen by the computer), your serial port would be -> /dev/serial/by-path/[value]. for more info visit this tutorial from [ArticulatedRobotics](https://www.youtube.com/watch?v=eJZXRncGaGM&list=PLunhqkrRNRhYAffV8JDiFOatQXuU-NnxT&index=8)
-
-  - OR you can also try this:
-  ```shell
-  ls /dev/ttyU*
-  ```
-  > you should see /dev/ttyUSB0 or /dev/ttyUSB1 and so on
+  > you should see /dev/ttyACM0 or /dev/ttyACM1 and so on
 
 - A simple way to get started is simply to try out and follow the example `motor_control.cpp` code.
 
@@ -51,3 +44,30 @@ A simple way to get started is simply to try out and follow the example code in 
     ````
 
 - You can follow the pattern used in the example `motor_control.cpp` in your own code.
+
+## Basic Library functions and usage
+
+- connect to epmc_driver shield module
+  > .connect("port_name or port_path")
+  > .clearDataBuffer()
+
+- send target angular velocity command
+  > .writeSpeed(motor0_TargetVel, motor1_TargetVel)
+
+- send PWM command
+  > .writePWM(motor0_PWM, motor1_PWM)
+
+- set motor command timeout
+  > .setCmdTimeout(timeout_ms)
+
+- get motor command timeout
+  > .getCmdTimeout() # returns motor command timeout in ms
+
+- read motors angular position
+  > .readPos() # returns angPos0, angPos1
+
+- read motors angular velocity
+  > .readVel() # returns angVel0, angVel1
+
+- read motorA maximum commandable angular velocity
+  > .getMaxVel(motor_no) # returns maxVel0 or maxVel1 based on the specified motor number

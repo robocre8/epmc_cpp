@@ -19,98 +19,87 @@ void delay_ms(unsigned long milliseconds)
 int main(int argc, char **argv)
 {
 
-  bool sendHigh = false;
+  // [4 rev/sec, 2 rev/sec, 1 rev/sec, 0.5 rev/sec]
+  float targetVel[] = {1.571, 3.142, 6.284, 12.568}; // in rad/sec
+  float vel = targetVel[1]; // in rad/sec
+  float v = 0.0;
 
-  float lowTargetVel = -10.00; // in rad/sec
-  float highTargetVel = 10.00; // in rad/sec
+  float pos0, pos1, pos2, pos3;
+  float vel0, vel1, vel2, vel3;
 
-  float pos0, pos1;
-  float vel0, vel1;
+  auto cmdTime = std::chrono::system_clock::now();
+  std::chrono::duration<double> cmdDuration;
+  float cmdTimeInterval = 5.0;
 
-  auto prevTime = std::chrono::system_clock::now();
-  std::chrono::duration<double> duration;
-  float sampleTime = 0.02;
+  auto readTime = std::chrono::system_clock::now();
+  std::chrono::duration<double> readDuration;
+  float readTimeInterval = 0.01; // 100Hz
 
-  auto ctrlPrevTime = std::chrono::system_clock::now();
-  std::chrono::duration<double> ctrlDuration;
-  float ctrlSampleTime = 4.0;
-
-  // std::string port = "/dev/serial/by-path/pci-0000:00:14.0-usb-0:1.4:1.0-port0";
-  std::string port = "/dev/ttyUSB0";
+  std::string port = "/dev/ttyACM0";
+  // std::string port = "/dev/ttyUSB0";
   epmc.connect(port);
 
   for (int i=0; i<4; i+=1){
     delay_ms(1000);
-    std::cout << "configuring controller: " << i+1 << " sec" << std::endl;
+    std::cout << "waiting for epmc controller: " << i+1 << " sec" << std::endl;
   }
   
 
-  epmc.writeSpeed(0.0, 0.0);
+  epmc.writeSpeed(v, v);
   epmc.clearDataBuffer();
 
-  int motor_cmd_timeout_ms = 5000;
+  int motor_cmd_timeout_ms = 10000;
   epmc.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
   motor_cmd_timeout_ms = epmc.getCmdTimeout();
   std::cout << "motor command timeout: " << motor_cmd_timeout_ms << " ms" << std::endl;
 
-  epmc.writeSpeed(lowTargetVel, lowTargetVel);
+  bool sendHigh = true;
 
-  sendHigh = true;
-
-  prevTime = std::chrono::system_clock::now();
-  ctrlPrevTime = std::chrono::system_clock::now();
+  cmdTime = std::chrono::system_clock::now();
+  readTime = std::chrono::system_clock::now();
 
   while (true)
   {
 
-    ctrlDuration = (std::chrono::system_clock::now() - ctrlPrevTime);
-    if (ctrlDuration.count() > ctrlSampleTime)
+    cmdDuration = (std::chrono::system_clock::now() - cmdTime);
+    if (cmdDuration.count() > cmdTimeInterval)
     {
-      try
+      if (sendHigh)
       {
-        if (sendHigh)
-        {
-          epmc.writeSpeed(highTargetVel, highTargetVel);
-
-          sendHigh = false;
-        }
-        else
-        {
-          epmc.writeSpeed(lowTargetVel, lowTargetVel);
-
-          sendHigh = true;
-        }
+        v = vel;
+        // epmc.writeSpeed(v, v);
+        vel *= -1;
+        sendHigh = false;
       }
-      catch(const std::exception& e)
+      else
       {
-        std::cout << "Error occurred: ";
+        v = 0.0;
+        // epmc.writeSpeed(v, v);
+        sendHigh = true;
       }
 
-      ctrlPrevTime = std::chrono::system_clock::now();
+      cmdTime = std::chrono::system_clock::now();
     }
 
-    duration = (std::chrono::system_clock::now() - prevTime);
-    if (duration.count() > sampleTime)
+    readDuration = (std::chrono::system_clock::now() - readTime);
+    if (readDuration.count() > readTimeInterval)
     {
       try
       {
-        bool success = epmc.readMotorData(pos0, pos1, vel0, vel1);
-
-        if (success){
-
-        }
+        epmc.writeSpeed(v, v);
+        epmc.readMotorData(pos0, pos1, vel0, vel1);
         std::cout << "----------------------------------" << std::endl;
-        std::cout << "motorA_readings: [" << pos0 << std::fixed << std::setprecision(4) << "," << vel0 << std::fixed << std::setprecision(4) << "]" << std::endl;
-        std::cout << "motorB_readings: [" << pos1 << std::fixed << std::setprecision(4) << "," << vel1 << std::fixed << std::setprecision(4) << "]" << std::endl;
+        std::cout << "motor0_readings: [" << pos0 << "," << vel0 << "]" << std::endl;
+        std::cout << "motor1_readings: [" << pos1 << "," << vel1 << "]" << std::endl;
         std::cout << "----------------------------------" << std::endl;
         std::cout << std::endl;
       }
-      catch (int e)
+      catch(const std::exception& e)
       {
-        std::cout << "Error occurred: ";
+        std::cout << "Error occurred: " << e.what() << std::endl;
       }
 
-      prevTime = std::chrono::system_clock::now();
+      readTime = std::chrono::system_clock::now();
     }
   }
 }
