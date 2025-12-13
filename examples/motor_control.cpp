@@ -18,6 +18,7 @@ void delay_ms(unsigned long milliseconds)
 
 int main(int argc, char **argv)
 {
+  bool success;
 
   // [4 rev/sec, 2 rev/sec, 1 rev/sec, 0.5 rev/sec]
   float targetVel[] = {1.571, 3.142, 6.284, 12.568}; // in rad/sec
@@ -45,12 +46,12 @@ int main(int argc, char **argv)
   }
   
 
-  epmc.clearDataBuffer();
+  success = epmc.clearDataBuffer();
   epmc.writeSpeed(v, v);
 
   int motor_cmd_timeout_ms = 10000;
   epmc.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
-  motor_cmd_timeout_ms = epmc.getCmdTimeout();
+  success = epmc.getCmdTimeout(motor_cmd_timeout_ms);
   std::cout << "motor command timeout: " << motor_cmd_timeout_ms << " ms" << std::endl;
 
   bool sendHigh = true;
@@ -67,14 +68,14 @@ int main(int argc, char **argv)
       if (sendHigh)
       {
         v = vel;
-        // epmc.writeSpeed(v, v);
+        epmc.writeSpeed(v, v);
         vel *= -1;
         sendHigh = false;
       }
       else
       {
         v = 0.0;
-        // epmc.writeSpeed(v, v);
+        epmc.writeSpeed(v, v);
         sendHigh = true;
       }
 
@@ -84,20 +85,14 @@ int main(int argc, char **argv)
     readDuration = (std::chrono::system_clock::now() - readTime);
     if (readDuration.count() > readTimeInterval)
     {
-      try
-      {
-        epmc.writeSpeed(v, v);
-        epmc.readMotorData(pos0, pos1, vel0, vel1);
-        std::cout << "----------------------------------" << std::endl;
-        std::cout << "motor0_readings: [" << pos0 << "," << vel0 << "]" << std::endl;
-        std::cout << "motor1_readings: [" << pos1 << "," << vel1 << "]" << std::endl;
-        std::cout << "----------------------------------" << std::endl;
-        std::cout << std::endl;
-      }
-      catch(const std::exception& e)
-      {
-        std::cout << "Error occurred: " << e.what() << std::endl;
-      }
+
+      // epmc.writeSpeed(v, v);
+      success = epmc.readMotorData(pos0, pos1, vel0, vel1);
+      std::cout << "----------------------------------" << std::endl;
+      std::cout << "motor0_readings: [" << pos0 << "," << vel0 << "]" << std::endl;
+      std::cout << "motor1_readings: [" << pos1 << "," << vel1 << "]" << std::endl;
+      std::cout << "----------------------------------" << std::endl;
+      std::cout << std::endl;
 
       readTime = std::chrono::system_clock::now();
     }
