@@ -45,8 +45,8 @@ int main(int argc, char **argv)
   }
   
 
-  epmc.writeSpeed(v, v);
   epmc.clearDataBuffer();
+  epmc.writeSpeed(v, v);
 
   int motor_cmd_timeout_ms = 10000;
   epmc.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
