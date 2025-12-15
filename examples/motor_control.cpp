@@ -18,7 +18,8 @@ void delay_ms(unsigned long milliseconds)
 
 int main(int argc, char **argv)
 {
-  bool success;
+  // variable for communication
+  bool success, val0, val1, val2, val3;
 
   // [4 rev/sec, 2 rev/sec, 1 rev/sec, 0.5 rev/sec]
   float targetVel[] = {1.571, 3.142, 6.284, 12.568}; // in rad/sec
@@ -51,8 +52,13 @@ int main(int argc, char **argv)
 
   int motor_cmd_timeout_ms = 10000;
   epmc.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
-  success = epmc.getCmdTimeout(motor_cmd_timeout_ms);
-  std::cout << "motor command timeout: " << motor_cmd_timeout_ms << " ms" << std::endl;
+  std::tie(success, val0) = epmc.getCmdTimeout();
+  if (success) {
+    motor_cmd_timeout_ms = val0;
+    std::cout << "motor command timeout: " << motor_cmd_timeout_ms << " ms" << std::endl;
+  } else {
+    std::cerr << "ERROR: could not read motor command timeout" << std::endl;
+  }
 
   bool sendHigh = true;
 
@@ -87,7 +93,11 @@ int main(int argc, char **argv)
     {
 
       // epmc.writeSpeed(v, v);
-      success = epmc.readMotorData(pos0, pos1, vel0, vel1);
+      std::tie(success, val0, val1, val2, val3) = epmc.readMotorData();
+      if (success) { // only update if read was successfull
+        pos0 = val0; pos1 = val1;
+        vel0 = val2; vel1 = val3;
+      }
       std::cout << "----------------------------------" << std::endl;
       std::cout << "motor0_readings: [" << pos0 << "," << vel0 << "]" << std::endl;
       std::cout << "motor1_readings: [" << pos1 << "," << vel1 << "]" << std::endl;
