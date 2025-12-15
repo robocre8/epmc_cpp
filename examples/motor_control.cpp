@@ -19,7 +19,7 @@ void delay_ms(unsigned long milliseconds)
 int main(int argc, char **argv)
 {
   // variable for communication
-  bool success, val0, val1, val2, val3;
+  bool success; float val0, val1, val2, val3;
 
   // [4 rev/sec, 2 rev/sec, 1 rev/sec, 0.5 rev/sec]
   float targetVel[] = {1.571, 3.142, 6.284, 12.568}; // in rad/sec

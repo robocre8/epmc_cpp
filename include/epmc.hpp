@@ -202,6 +202,7 @@ private:
 
   std::tuple<bool, float> read_packet1() {
     std::vector<uint8_t> payload;
+    float val;
     try
     {
       serial_conn_.Read(payload, 4, timeout_ms_);
@@ -209,7 +210,6 @@ private:
         // std::cerr << "[EPMC SERIAL ERROR]: Timeout while reading 1 values" << std::endl;
         return std::make_tuple(false, 0.0);
       }
-      float val;
       std::memcpy(&val, payload.data(), sizeof(float)); // little-endian assumed
       return std::make_tuple(true, val);
     }
@@ -222,6 +222,7 @@ private:
 
   std::tuple<bool, float, float> read_packet2() {
     std::vector<uint8_t> payload;
+    float val0, val1;
     try
     {
       serial_conn_.Read(payload, 8, timeout_ms_);
@@ -229,7 +230,6 @@ private:
         // std::cerr << "[EPMC SERIAL ERROR]: Timeout while reading 2 values" << std::endl;
         return std::make_tuple(false, 0.0, 0.0);
       }
-      float val0, val1;
       std::memcpy(&val0, payload.data() + 0, sizeof(float));
       std::memcpy(&val1, payload.data() + 4, sizeof(float));
       return std::make_tuple(true, val0, val1);
@@ -243,6 +243,7 @@ private:
 
   std::tuple<bool, float, float, float, float> read_packet4() {
     std::vector<uint8_t> payload;
+    float val0, val1, val2, val3;
     try
     {
       serial_conn_.Read(payload, 16, timeout_ms_);
@@ -250,12 +251,11 @@ private:
         // std::cerr << "[EPMC SERIAL ERROR]: Timeout while reading 4 values" << std::endl;
         return std::make_tuple(false, 0.0, 0.0, 0.0, 0.0);
       }
-      float val0, val1, val2, val3;
       std::memcpy(&val0, payload.data() + 0, sizeof(float));
       std::memcpy(&val1, payload.data() + 4, sizeof(float));
       std::memcpy(&val2, payload.data() + 8, sizeof(float));
       std::memcpy(&val3, payload.data() + 12, sizeof(float));
-      return std::make_tuple(false, val0, val1, val2, val3);
+      return std::make_tuple(true, val0, val1, val2, val3);
     }
     catch(const LibSerial::ReadTimeout &e)
     {
