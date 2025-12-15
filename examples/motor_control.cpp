@@ -21,13 +21,13 @@ int main(int argc, char **argv)
   // variable for communication
   bool success; float val0, val1, val2, val3;
 
+  float pos0, pos1, pos2, pos3;
+  float vel0, vel1, vel2, vel3;
+
   // [4 rev/sec, 2 rev/sec, 1 rev/sec, 0.5 rev/sec]
   float targetVel[] = {1.571, 3.142, 6.284, 12.568}; // in rad/sec
   float vel = targetVel[1]; // in rad/sec
   float v = 0.0;
-
-  float pos0, pos1, pos2, pos3;
-  float vel0, vel1, vel2, vel3;
 
   auto cmdTime = std::chrono::system_clock::now();
   std::chrono::duration<double> cmdDuration;
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
   int motor_cmd_timeout_ms = 10000;
   epmc.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
   std::tie(success, val0) = epmc.getCmdTimeout();
-  if (success) {
+  if (success) { // only update if read was successfull
     motor_cmd_timeout_ms = val0;
     std::cout << "motor command timeout: " << motor_cmd_timeout_ms << " ms" << std::endl;
   } else {

@@ -48,26 +48,30 @@ A simple way to get started is simply to try out and follow the example code in 
 ## Basic Library functions and usage
 
 - connect to epmc_driver shield module
-  > .connect("port_name or port_path")
-  > .clearDataBuffer()
+  > EPMC epmc
+  >
+  > epmc.connect("port_name or port_path")
+  >
+  > epmc.clearDataBuffer() # returns bool -> success
 
 - send target angular velocity command
-  > .writeSpeed(motor0_TargetVel, motor1_TargetVel)
+  > epmc.writeSpeed(motor0_TargetVel, motor1_TargetVel)
 
 - send PWM command
-  > .writePWM(motor0_PWM, motor1_PWM)
+  > epmc.writePWM(motor0_PWM, motor1_PWM)
 
 - set motor command timeout
-  > .setCmdTimeout(timeout_ms)
+  > epmc.setCmdTimeout(timeout_ms)
 
 - get motor command timeout
-  > .getCmdTimeout() # returns motor command timeout in ms
+  > epmc.getCmdTimeout() # returns std::tuple -> (success, motor_command_timeout_ms): bool, float
 
 - read motors angular position
-  > .readPos() # returns angPos0, angPos1
+  > epmc.readPos() # returns std::tuple -> (success, angPos0, angPos1): bool, float, float
 
 - read motors angular velocity
-  > .readVel() # returns angVel0, angVel1
+  > epmc.readVel() # returns std::tuple -> (success, angVel0, angVel1): bool, float, float
 
 - read motorA maximum commandable angular velocity
-  > .getMaxVel(motor_no) # returns maxVel0 or maxVel1 based on the specified motor number
+  > epmc.getMaxVel(motor_no) # returns std::tuple -> (success, max_vel): bool, float, float
+  > maxVel0 or maxVel1 based on the specified motor number
