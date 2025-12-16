@@ -183,7 +183,8 @@ private:
     return sum & 0xFF;
   }
 
-  void send_packet_without_payload(uint8_t cmd, uint8_t len=0) {
+  void send_packet_without_payload(uint8_t cmd) {
+    uint8_t len = 0;
     std::vector<uint8_t> packet = {START_BYTE, cmd, len}; // no payload
     uint8_t checksum = calcChecksum(packet);
     packet.push_back(checksum);
