@@ -18,14 +18,16 @@ void delay_ms(unsigned long milliseconds)
 
 int main(int argc, char **argv)
 {
+  // variable for communication
+  bool success; float val0, val1, val2, val3;
+
+  float pos0, pos1, pos2, pos3;
+  float vel0, vel1, vel2, vel3;
 
   // [4 rev/sec, 2 rev/sec, 1 rev/sec, 0.5 rev/sec]
   float targetVel[] = {1.571, 3.142, 6.284, 12.568}; // in rad/sec
   float vel = targetVel[1]; // in rad/sec
   float v = 0.0;
-
-  float pos0, pos1, pos2, pos3;
-  float vel0, vel1, vel2, vel3;
 
   auto cmdTime = std::chrono::system_clock::now();
   std::chrono::duration<double> cmdDuration;
@@ -45,13 +47,18 @@ int main(int argc, char **argv)
   }
   
 
-  epmc.clearDataBuffer();
+  success = epmc.clearDataBuffer();
   epmc.writeSpeed(v, v);
 
   int motor_cmd_timeout_ms = 10000;
   epmc.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
-  motor_cmd_timeout_ms = epmc.getCmdTimeout();
-  std::cout << "motor command timeout: " << motor_cmd_timeout_ms << " ms" << std::endl;
+  std::tie(success, val0) = epmc.getCmdTimeout();
+  if (success) { // only update if read was successfull
+    motor_cmd_timeout_ms = val0;
+    std::cout << "motor command timeout: " << motor_cmd_timeout_ms << " ms" << std::endl;
+  } else {
+    std::cerr << "ERROR: could not read motor command timeout" << std::endl;
+  }
 
   bool sendHigh = true;
 
@@ -67,14 +74,14 @@ int main(int argc, char **argv)
       if (sendHigh)
       {
         v = vel;
-        // epmc.writeSpeed(v, v);
+        epmc.writeSpeed(v, v);
         vel *= -1;
         sendHigh = false;
       }
       else
       {
         v = 0.0;
-        // epmc.writeSpeed(v, v);
+        epmc.writeSpeed(v, v);
         sendHigh = true;
       }
 
@@ -84,20 +91,18 @@ int main(int argc, char **argv)
     readDuration = (std::chrono::system_clock::now() - readTime);
     if (readDuration.count() > readTimeInterval)
     {
-      try
-      {
-        epmc.writeSpeed(v, v);
-        epmc.readMotorData(pos0, pos1, vel0, vel1);
-        std::cout << "----------------------------------" << std::endl;
-        std::cout << "motor0_readings: [" << pos0 << "," << vel0 << "]" << std::endl;
-        std::cout << "motor1_readings: [" << pos1 << "," << vel1 << "]" << std::endl;
-        std::cout << "----------------------------------" << std::endl;
-        std::cout << std::endl;
+
+      // epmc.writeSpeed(v, v);
+      std::tie(success, val0, val1, val2, val3) = epmc.readMotorData();
+      if (success) { // only update if read was successfull
+        pos0 = val0; pos1 = val1;
+        vel0 = val2; vel1 = val3;
       }
-      catch(const std::exception& e)
-      {
-        std::cout << "Error occurred: " << e.what() << std::endl;
-      }
+      std::cout << "----------------------------------" << std::endl;
+      std::cout << "motor0_readings: [" << pos0 << "," << vel0 << "]" << std::endl;
+      std::cout << "motor1_readings: [" << pos1 << "," << vel1 << "]" << std::endl;
+      std::cout << "----------------------------------" << std::endl;
+      std::cout << std::endl;
 
       readTime = std::chrono::system_clock::now();
     }
