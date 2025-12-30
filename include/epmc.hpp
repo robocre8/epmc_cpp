@@ -134,7 +134,7 @@ public:
     return std::make_tuple(success, v0, v1);
   }
 
-  std::tuple<bool, float> getMaxVel(int motor_no)
+  std::tuple<bool, float> getMaxSpeed(int motor_no)
   {
     bool success; float max_vel;
     std::tie(success, max_vel, std::ignore) = recv((float)GET_MAX_SPEED, (float)motor_no);
@@ -143,7 +143,7 @@ public:
 
   void setCmdTimeout(int timeout_ms)
   {
-    send((float)SET_CMD_TIMEOUT, (float)timeout_ms);
+    send((float)SET_CMD_TIMEOUT, 0.0, (float)timeout_ms);
   }
 
   std::tuple<bool, int> getCmdTimeout()
@@ -153,9 +153,9 @@ public:
     return std::make_tuple(success, (int)timeout_ms);
   }
 
-  void setPidMode(int mode, int motor_no)
+  void setPidMode(int motor_no, int mode)
   {
-    send((float)SET_PID_MODE, (float)mode, (float)motor_no);
+    send((float)SET_PID_MODE, (float)motor_no, (float)mode);
   }
 
   std::tuple<bool, int> getPidMode(int motor_no)
