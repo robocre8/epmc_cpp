@@ -19,10 +19,10 @@ void delay_ms(unsigned long milliseconds)
 int main(int argc, char **argv)
 {
   // variable for communication
-  bool success; float val0, val1, val2, val3;
+  bool success; float val0, val1;
 
-  float pos0, pos1, pos2, pos3;
-  float vel0, vel1, vel2, vel3;
+  float pos0, pos1;
+  float vel0, vel1;
 
   // [4 rev/sec, 2 rev/sec, 1 rev/sec, 0.5 rev/sec]
   float targetVel[] = {1.571, 3.142, 6.284, 12.568}; // in rad/sec
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
   // std::string port = "/dev/ttyUSB0";
   epmc.connect(port);
 
-  for (int i=0; i<4; i+=1){
+  for (int i=0; i<5; i+=1){
     delay_ms(1000);
     std::cout << "waiting for epmc controller: " << i+1 << " sec" << std::endl;
   }
@@ -93,10 +93,15 @@ int main(int argc, char **argv)
     {
 
       // epmc.writeSpeed(v, v);
-      std::tie(success, val0, val1, val2, val3) = epmc.readMotorData();
+      std::tie(success, val0, val1) = epmc.readPos();
       if (success) { // only update if read was successfull
-        pos0 = val0; pos1 = val1;
-        vel0 = val2; vel1 = val3;
+        pos0 = val0;
+        pos1 = val1;
+      }
+      std::tie(success, val0, val1) = epmc.readSpeed();
+      if (success) { // only update if read was successfull
+        vel0 = val0;
+        vel1 = val1;
       }
       std::cout << "----------------------------------" << std::endl;
       std::cout << "motor0_readings: [" << pos0 << "," << vel0 << "]" << std::endl;
