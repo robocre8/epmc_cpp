@@ -112,12 +112,12 @@ public:
 
   void writePWM(int pwm0, int pwm1)
   {
-    send(WRITE_PWM, (float)pwm0, (float)pwm1);
+    send((float)WRITE_PWM, (float)pwm0, (float)pwm1);
   }
 
   void writeSpeed(float v0, float v1)
   {
-    send(WRITE_SPEED, v0, v1);
+    send((float)WRITE_SPEED, v0, v1);
   }
 
   std::tuple<bool, float, float> readPos()
@@ -179,7 +179,7 @@ private:
   void send(float cmd, float arg1=0.0, float arg2=0.0)
   {
     std::ostringstream ss;
-    ss << cmd << " " << arg1 << " " << arg2 << "\r";
+    ss << cmd << " " << round_to_dp(arg1,4) << " " << round_to_dp(arg2,4) << "\r";
 
     serial_conn_.Write(ss.str());
   }
@@ -217,7 +217,7 @@ private:
       }
 
       success = true;
-      return std::make_tuple(success, data1, data2);
+      return std::make_tuple(success, round_to_dp(data1,4), round_to_dp(data2,4));
     }
     catch (...) {
       success = false;
