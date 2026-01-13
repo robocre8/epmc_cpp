@@ -35,11 +35,13 @@ int main(int argc, char **argv)
 
   auto readTime = std::chrono::system_clock::now();
   std::chrono::duration<double> readDuration;
-  float readTimeInterval = 0.01; // 100Hz
+  float readTimeInterval = 0.02; // 50Hz
 
-  std::string port = "/dev/ttyACM0";
-  // std::string port = "/dev/ttyUSB0";
-  epmc.connect(port);
+  // 50Hz comm setup
+  std::string serial_port = "/dev/ttyACM0";
+  int serial_baudrate = 115200;
+  int serial_timeout_ms = 16;
+  epmc.connect(serial_port, serial_baudrate, serial_timeout_ms);
 
   for (int i=0; i<4; i+=1){
     delay_ms(1000);
