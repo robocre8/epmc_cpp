@@ -40,7 +40,7 @@ int main(int argc, char **argv)
   // 50Hz comm setup
   std::string serial_port = "/dev/ttyACM0";
   int serial_baudrate = 115200;
-  int serial_timeout_ms = 16;
+  int serial_timeout_ms = 18; // value < 20ms (50 Hz comm)
   epmc.connect(serial_port, serial_baudrate, serial_timeout_ms);
 
   for (int i=0; i<4; i+=1){
