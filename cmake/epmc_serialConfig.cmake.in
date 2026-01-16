@@ -1,0 +1,14 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# --------------------------------------------------
+# Dependencies
+# --------------------------------------------------
+find_dependency(PkgConfig)
+pkg_check_modules(LIBSERIAL REQUIRED libserial)
+
+# --------------------------------------------------
+# Load targets
+# --------------------------------------------------
+include("${CMAKE_CURRENT_LIST_DIR}/epmc_serialTargets.cmake")
