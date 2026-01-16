@@ -26,3 +26,14 @@
   ```shell
   dpkg-buildpackage -us -uc
   ```
+
+- install built .deb package
+  ```shell
+    sudo apt remove libserial-dev #uninstall
+    sudo apt install ../epmc-serial-dev_<version>_amd64.deb #this should install the libserialdev along
+  ```
+
+- check if installed
+  ```shell
+    dpkg -L epmc-serial-dev
+  ```

@@ -1,7 +1,7 @@
 Source: epmc-serial
 Section: libs
 Priority: optional
-Maintainer: Obiagba Samuel <you@example.com>
+Maintainer: Samuel Obiagba <samuel.c.agba@gmail.com>
 Build-Depends: debhelper-compat (= 13), cmake
 Standards-Version: 4.6.2
 Homepage: https://github.com/robocre8/epmc_serial_cpp
