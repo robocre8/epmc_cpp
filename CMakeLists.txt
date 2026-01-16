@@ -31,6 +31,10 @@ target_link_libraries(epmc_serial INTERFACE
     ${LIBSERIAL_LIBRARIES}
 )
 
+target_compile_options(epmc_serial INTERFACE
+    ${LIBSERIAL_CFLAGS_OTHER}
+)
+
 # Namespaced alias
 add_library(epmc_serial::epmc_serial ALIAS epmc_serial)
 
@@ -58,6 +62,7 @@ install(
 install(
     TARGETS epmc_serial
     EXPORT epmc_serialTargets
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install(

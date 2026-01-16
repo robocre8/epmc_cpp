@@ -1,0 +1,14 @@
+Source: epmc-serial
+Section: libs
+Priority: optional
+Maintainer: Obiagba Samuel <you@example.com>
+Build-Depends: debhelper-compat (= 13), cmake
+Standards-Version: 4.6.2
+Homepage: https://github.com/robocre8/epmc_serial_cpp
+
+Package: epmc-serial-dev
+Architecture: amd64
+Depends: ${misc:Depends}, libserial-dev
+Description: Header-only C++ library for EPMC serial communication
+ Header-only C++ library providing a clean interface for EPMC motor
+ controller serial communication. Designed for robotics and ROS 2 usage.
