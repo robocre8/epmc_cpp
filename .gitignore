@@ -1,4 +1,8 @@
-# Ignore __pycache__ folder
+# build artifacts
+build/
+build-*/
+cmake-build-*/
+
 *build
 *.vscode
 *debian/.deb*

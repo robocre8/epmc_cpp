@@ -3,10 +3,14 @@
     rm -rf build
 
     rm -rf debian/epmc-serial*
+
+    rm -rf build debian/epmc-serial* debian/.debhelper* debian/debhelper* debian/epmc-serial* debian/files obj-x86*
   ```
 
   ```shell
   sudo apt update
+
+  sudo apt remove epmc-serial-dev
 
   sudo apt install \
     build-essential \
@@ -36,4 +40,9 @@
 - check if installed
   ```shell
     dpkg -L epmc-serial-dev
+  ```
+
+- remove
+  ```shell
+    rm -rf build debian/epmc-serial* debian/.debhelper* debian/debhelper* debian/epmc-serial* debian/files obj-x86*
   ```

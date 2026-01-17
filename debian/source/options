@@ -1,0 +1,7 @@
+tar-ignore = build
+tar-ignore = build-*
+tar-ignore = cmake-build-*
+tar-ignore = .git
+tar-ignore = .vscode
+tar-ignore = log
+tar-ignore = install
