@@ -6,9 +6,9 @@ C++ serial interface for the Easy PID Motor Controller (EPMC).
 #
 
 ## Install
-- download the epmc-serial-dev deb file form the release
+- download the latest epmc-serial-dev `.deb` file form the [release](https://github.com/robocre8/epmc_serial_cpp/releases)
 
-- install the epmc-serial-dev deb file
+- install the epmc-serial-dev `.deb` file
   ```shell
     sudo apt install ../epmc-serial-dev_<version>_amd64.deb
   ```
