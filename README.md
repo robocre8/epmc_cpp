@@ -1,4 +1,4 @@
-## Easy PID Motor Controller (EPMC) Cpp Library
+## Easy PID Motor Controller (EPMC) Cpp Library (amd64-build) i.e PC
 C++ serial interface for the Easy PID Motor Controller (EPMC).
 
 > you can use it in your microcomputer robotics project (e.g Raspberry Pi, PC, etc.) running ubuntu
