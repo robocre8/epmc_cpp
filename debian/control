@@ -7,7 +7,7 @@ Standards-Version: 4.6.2
 Homepage: https://github.com/robocre8/epmc_serial_cpp
 
 Package: epmc-serial-dev
-Architecture: amd64
+Architecture: arm64
 Depends: ${misc:Depends}, libserial-dev
 Description: Header-only C++ library for EPMC serial communication
  Header-only C++ library providing a clean interface for EPMC motor
