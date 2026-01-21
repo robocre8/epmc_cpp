@@ -2,6 +2,7 @@
 
 #include <libserial/SerialPort.h>
 
+#include <iostream>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -149,7 +150,7 @@ public:
             serial.Close();
     }
 
-    bool isConnected() const
+    bool connected() const
     {
         return serial.IsOpen();
     }
