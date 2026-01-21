@@ -7,9 +7,9 @@
 
 #include <iomanip>
 
-#include "epmc.hpp"
+#include "epmc_serial.hpp"
 
-EPMC epmc;
+epmc_serial::EPMCSerialClient controller;
 
 void delay_ms(unsigned long milliseconds)
 {
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
   std::string serial_port = "/dev/ttyACM0";
   int serial_baudrate = 115200;
   int serial_timeout_ms = 18; // value < 20ms (50 Hz comm)
-  epmc.connect(serial_port, serial_baudrate, serial_timeout_ms);
+  controller.connect(serial_port, serial_baudrate, serial_timeout_ms);
 
   for (int i=0; i<4; i+=1){
     delay_ms(1000);
@@ -49,12 +49,12 @@ int main(int argc, char **argv)
   }
   
 
-  success = epmc.clearDataBuffer();
-  epmc.writeSpeed(v, v);
+  success = controller.clearDataBuffer();
+  controller.writeSpeed(v, v);
 
   int motor_cmd_timeout_ms = 10000;
-  epmc.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
-  std::tie(success, val0) = epmc.getCmdTimeout();
+  controller.setCmdTimeout(motor_cmd_timeout_ms); // set motor command timeout
+  std::tie(success, val0) = controller.getCmdTimeout();
   if (success) { // only update if read was successfull
     motor_cmd_timeout_ms = val0;
     std::cout << "motor command timeout: " << motor_cmd_timeout_ms << " ms" << std::endl;
@@ -76,14 +76,14 @@ int main(int argc, char **argv)
       if (sendHigh)
       {
         v = vel;
-        epmc.writeSpeed(v, v);
+        controller.writeSpeed(v, v);
         vel *= -1;
         sendHigh = false;
       }
       else
       {
         v = 0.0;
-        epmc.writeSpeed(v, v);
+        controller.writeSpeed(v, v);
         sendHigh = true;
       }
 
@@ -94,8 +94,8 @@ int main(int argc, char **argv)
     if (readDuration.count() > readTimeInterval)
     {
 
-      // epmc.writeSpeed(v, v);
-      std::tie(success, val0, val1, val2, val3) = epmc.readMotorData();
+      // controller.writeSpeed(v, v);
+      std::tie(success, val0, val1, val2, val3) = controller.readMotorData();
       if (success) { // only update if read was successfull
         pos0 = val0; pos1 = val1;
         vel0 = val2; vel1 = val3;

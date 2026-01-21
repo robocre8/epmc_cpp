@@ -1,5 +1,5 @@
 ## Easy PID Motor Controller (EPMC) C++ Library
-This library helps communicate with the **`Easy PID Motor Controller Module`** (i.e **`L298N EPMC MODULE`** or a **`CUSTOM EPMC INTERFACE BOARD`**) in your PC or microcomputer linux c++ robotic project (as it depends on the libserial-dev package), with the [epmc_setup_application](https://github.com/robocre8/epmc_setup_application).
+This library helps communicate with the **`Easy PID Motor Controller Module`** (i.e **`EPMC MODULE`**) in your PC or microcomputer linux c++ robotic project (as it depends on the libserial-dev package), with the [epmc_setup_application](https://github.com/robocre8/epmc_setup_application).
 
 > you can use it in your microcomputer robotics project **running on linux** (e.g Raspberry Pi, PC, etc.)
 
@@ -17,7 +17,7 @@ A simple way to get started is simply to try out and follow the example code in 
 > [!NOTE]  
 > you can use this command if you want to clone the repo:
 > 
-> ```git clone https://github.com/robocre8/epmc_cpp.git```
+> ```git clone https://github.com/robocre8/epmc_serial_cpp.git```
 
 - check the serial port the driver is connected to:
   ```shell
@@ -48,30 +48,30 @@ A simple way to get started is simply to try out and follow the example code in 
 ## Basic Library functions and usage
 
 - connect to epmc_driver shield module
-  > EPMC epmc
+  > epmc_serial::EPMCSerialClient controller
   >
-  > epmc.connect("port_name or port_path")
+  > controller.connect("port_name or port_path")
   >
-  > epmc.clearDataBuffer() # returns bool -> success
+  > controller.clearDataBuffer() # returns bool -> success
 
 - send target angular velocity command
-  > epmc.writeSpeed(motor0_TargetVel, motor1_TargetVel)
+  > controller.writeSpeed(motor0_TargetVel, motor1_TargetVel)
 
 - send PWM command
-  > epmc.writePWM(motor0_PWM, motor1_PWM)
+  > controller.writePWM(motor0_PWM, motor1_PWM)
 
 - set motor command timeout
-  > epmc.setCmdTimeout(timeout_ms)
+  > controller.setCmdTimeout(timeout_ms)
 
 - get motor command timeout
-  > epmc.getCmdTimeout() # returns std::tuple -> (success, motor_command_timeout_ms): bool, float
+  > controller.getCmdTimeout() # returns std::tuple -> (success, motor_command_timeout_ms): bool, float
 
 - read motors angular position
-  > epmc.readPos() # returns std::tuple -> (success, angPos0, angPos1): bool, float, float
+  > controller.readPos() # returns std::tuple -> (success, angPos0, angPos1): bool, float, float
 
 - read motors angular velocity
-  > epmc.readVel() # returns std::tuple -> (success, angVel0, angVel1): bool, float, float
+  > controller.readVel() # returns std::tuple -> (success, angVel0, angVel1): bool, float, float
 
 - read motorA maximum commandable angular velocity
-  > epmc.getMaxVel(motor_no) # returns std::tuple -> (success, max_vel): bool, float, float
+  > controller.getMaxVel(motor_no) # returns std::tuple -> (success, max_vel): bool, float, float
   > maxVel0 or maxVel1 based on the specified motor number
