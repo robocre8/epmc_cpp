@@ -16,9 +16,9 @@ C++ serial interface for the Easy PID Motor Controller (EPMC).
 ## Install
 - in your home dir or any prefered directory
   ```shell
-    git clone https://github.com/robocre8/epmc_cpp.git
+    git clone https://github.com/robocre8/epmc_serial_cpp.git
 
-    cd epmc_cpp
+    cd epmc_serial_cpp
 
     cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/epmc_serial
 
@@ -57,36 +57,36 @@ C++ serial interface for the Easy PID Motor Controller (EPMC).
 ## Basic Library functions and usage
 
 - connect to EPMC module
-  > epmc = EPMC()
+  > epmc_serial::EPMCSerialClient controller;
   >
-  > epmc.connect("port_name or port_path")
+  > controller.connect("port_name or port_path")
 
 - clear speed, position, e.t.c data buffer on the EPMC module
-  > epmc.clearDataBuffer() # returns bool -> success
+  > controller.clearDataBuffer() # returns bool -> success
 
 - send target angular velocity command
-  > epmc.writeSpeed(motor0_TargetVel, motor1_TargetVel)
+  > controller.writeSpeed(motor0_TargetVel, motor1_TargetVel)
 
 - send PWM command
-  > epmc.writePWM(motor0_PWM, motor1_PWM)
+  > controller.writePWM(motor0_PWM, motor1_PWM)
 
 - set motor command timeout
-  > epmc.setCmdTimeout(timeout_ms)
+  > controller.setCmdTimeout(timeout_ms)
 
 - get motor command timeout
-  > epmc.getCmdTimeout() # returns tuple -> (success, motor_command_timeout_ms): bool, float
+  > controller.getCmdTimeout() # returns tuple -> (success, motor_command_timeout_ms): bool, float
 
 - read motors angular position and angular velocity
-  > epmc.readMotorData() # returns tuple -> (success, angPos0, angPos1, angVel0, angVel1): bool, float, float, float, float
+  > controller.readMotorData() # returns tuple -> (success, angPos0, angPos1, angVel0, angVel1): bool, float, float, float, float
 
 - read motors angular position
-  > epmc.readPos() # returns tuple -> (success, angPos0, angPos1): bool, float, float
+  > controller.readPos() # returns tuple -> (success, angPos0, angPos1): bool, float, float
 
 - read motors angular velocity
-  > epmc.readVel() # returns tuple -> (success, angVel0, angVel1): bool, float, float
+  > controller.readVel() # returns tuple -> (success, angVel0, angVel1): bool, float, float
 
 - read motor maximum commandable angular velocity
-  > epmc.getMaxVel(motor_no) # returns tuple -> (success, max_vel): bool, float, float
+  > controller.getMaxVel(motor_no) # returns tuple -> (success, max_vel): bool, float, float
   > maxVel0 or maxVel1 based on the specified motor number
 
 - while these function above help communicate with the already configure EPMC module, more examples of advanced funtions usage for parameter tuning can be found in the [epmc_setup_application](https://github.com/robocre8/epmc_setup_application) source code
