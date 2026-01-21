@@ -1,24 +1,79 @@
-// #ifndef EPMC_SERIAL_HPP
-// #define EPMC_SERIAL_HPP
-
 #pragma once
 
-#include <iostream>
-#include <string>
-#include <iomanip>
-#include <vector>
-#include <tuple>
-#include <chrono>
-#include <thread>
-#include <cstring>  // memcpy
-#include <stdexcept> // For standard exception types
-#include <cmath> // Required for std::round, std::ceil, std::floor
 #include <libserial/SerialPort.h>
 
+#include <iostream>
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <vector>
+#include <tuple>
+#include <utility>
+#include <stdexcept>
+#include <chrono>
+#include <cmath>
+
+/* =======================
+   Protocol Definitions
+   ======================= */
+
+namespace 
+{
+
+static constexpr uint8_t START_BYTE = 0xAA;
+
+// Command IDs
+static constexpr uint8_t WRITE_VEL         = 0x01;
+static constexpr uint8_t WRITE_PWM         = 0x02;
+static constexpr uint8_t READ_POS          = 0x03;
+static constexpr uint8_t READ_VEL          = 0x04;
+static constexpr uint8_t READ_UVEL         = 0x05;
+static constexpr uint8_t READ_TVEL         = 0x06;
+
+static constexpr uint8_t SET_PPR           = 0x07;
+static constexpr uint8_t GET_PPR           = 0x08;
+
+static constexpr uint8_t SET_KP            = 0x09;
+static constexpr uint8_t GET_KP            = 0x0A;
+static constexpr uint8_t SET_KI            = 0x0B;
+static constexpr uint8_t GET_KI            = 0x0C;
+static constexpr uint8_t SET_KD            = 0x0D;
+static constexpr uint8_t GET_KD            = 0x0E;
+
+static constexpr uint8_t SET_RDIR          = 0x0F;
+static constexpr uint8_t GET_RDIR          = 0x10;
+
+static constexpr uint8_t SET_CUT_FREQ      = 0x11;
+static constexpr uint8_t GET_CUT_FREQ      = 0x12;
+
+static constexpr uint8_t SET_MAX_VEL       = 0x13;
+static constexpr uint8_t GET_MAX_VEL       = 0x14;
+
+static constexpr uint8_t SET_PID_MODE      = 0x15;
+static constexpr uint8_t GET_PID_MODE      = 0x16;
+
+static constexpr uint8_t SET_CMD_TIMEOUT   = 0x17;
+static constexpr uint8_t GET_CMD_TIMEOUT   = 0x18;
+
+static constexpr uint8_t SET_I2C_ADDR      = 0x19;
+static constexpr uint8_t GET_I2C_ADDR      = 0x1A;
+
+static constexpr uint8_t RESET_PARAMS      = 0x1B;
+
+static constexpr uint8_t READ_MOTOR_DATA   = 0x2A;
+static constexpr uint8_t CLEAR_DATA_BUFFER = 0x2C;
+
+}
+
+
+/* =======================
+   EPMC Serial Client
+   ======================= */
 namespace epmc_serial
 {
-inline double round_to_dp(double value, int decimal_places) {
-    const double multiplier = std::pow(10.0, decimal_places);
+
+inline float round_to_dp(float value, int decimal_places) {
+    const float multiplier = std::pow(10.0, decimal_places);
     return std::round(value * multiplier) / multiplier;
 }
 
@@ -56,302 +111,199 @@ inline LibSerial::BaudRate convert_baud_rate(int baud_rate)
     return LibSerial::BaudRate::BAUD_57600;
   }
 }
+
 }
 
-namespace epmc_serial 
+
+namespace epmc_serial
 {
 
 class EPMCSerialClient
 {
-
 public:
-  EPMCSerialClient() = default;
-  void connect(const std::string &serial_device, int32_t baud_rate = 115200, int32_t timeout_ms = 100);
-  void disconnect();
-  bool connected() const;
+    EPMCSerialClient() = default;
+    ~EPMCSerialClient() { disconnect(); }
 
-  void writePWM(int pwm0, int pwm1);
-  void writeSpeed(float v0, float v1);
-  std::tuple<bool, float, float> readPos();
-  std::tuple<bool, float, float> readVel();
-  std::tuple<bool, float, float, float, float> readMotorData();
-  std::tuple<bool, float> getMaxVel(int motor_no);
-  void setCmdTimeout(int timeout_ms);
-  std::tuple<bool, int> getCmdTimeout();
-  void setPidMode(int mode, int motor_no);
-  std::tuple<bool, int> getPidMode(int motor_no);
-  bool clearDataBuffer();
+    /* ---------- Connection ---------- */
+
+    void connect(const std::string& port,
+                 int baudrate = 115200,
+                 int timeout_ms = 100)
+    {
+        if (serial.IsOpen())
+            serial.Close();
+
+        serial.Open(port);
+
+        serial.SetBaudRate(convert_baud_rate(baudrate));
+        serial.SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
+        serial.SetParity(LibSerial::Parity::PARITY_NONE);
+        serial.SetStopBits(LibSerial::StopBits::STOP_BITS_1);
+        serial.SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
+
+        timeout_ms_ = timeout_ms;
+    }
+
+    void disconnect()
+    {
+        if (serial.IsOpen())
+            serial.Close();
+    }
+
+    bool connected() const
+    {
+        return serial.IsOpen();
+    }
+
+    /* ---------- Packet Helpers ---------- */
+
+    void sendPacket(uint8_t cmd,
+                    const std::vector<uint8_t>& payload = {})
+    {
+        if (!serial.IsOpen())
+            throw std::runtime_error("Serial port not connected");
+
+        std::vector<uint8_t> packet;
+        packet.reserve(4 + payload.size());
+
+        packet.push_back(START_BYTE);
+        packet.push_back(cmd);
+        packet.push_back(static_cast<uint8_t>(payload.size()));
+        packet.insert(packet.end(), payload.begin(), payload.end());
+
+        uint8_t checksum = 0;
+        for (uint8_t b : packet)
+            checksum += b;
+
+        packet.push_back(checksum);
+
+        serial.Write(packet);
+        serial.DrainWriteBuffer();
+    }
+
+    std::pair<bool, std::vector<float>>
+    readFloats(size_t count)
+    {
+        const size_t bytes_needed = count * sizeof(float);
+        std::vector<uint8_t> buf(bytes_needed);
+
+        serial.Read(buf, bytes_needed, timeout_ms_);
+        if (buf.size() != bytes_needed)
+            return {false, std::vector<float>(count, 0.0f)};
+
+        std::vector<float> values(count);
+        std::memcpy(values.data(), buf.data(), bytes_needed);
+
+        return {true, values};
+    }
+
+    /* ---------- Generic Data ---------- */
+
+    void write_data1(uint8_t cmd, float val, uint8_t pos = 0)
+    {
+        std::vector<uint8_t> payload(1 + sizeof(float));
+        payload[0] = pos;
+        std::memcpy(&payload[1], &val, sizeof(float));
+        sendPacket(cmd, payload);
+    }
+
+    std::tuple<bool, float>
+    read_data1(uint8_t cmd, uint8_t pos = 0)
+    {
+        float dummy = 0.0f;
+        std::vector<uint8_t> payload(1 + sizeof(float));
+        payload[0] = pos;
+        std::memcpy(&payload[1], &dummy, sizeof(float));
+
+        sendPacket(cmd, payload);
+
+        auto [ok, vals] = readFloats(1);
+        return {ok, round_to_dp(vals[0],4)};
+    }
+
+    void write_data2(uint8_t cmd, float a, float b)
+    {
+        std::vector<uint8_t> payload(2 * sizeof(float));
+        std::memcpy(&payload[0], &a, sizeof(float));
+        std::memcpy(&payload[4], &b, sizeof(float));
+        sendPacket(cmd, payload);
+    }
+
+    std::tuple<bool, float, float>
+    read_data2(uint8_t cmd)
+    {
+        sendPacket(cmd);
+        auto [ok, vals] = readFloats(2);
+        return {ok, round_to_dp(vals[0],4), round_to_dp(vals[1],4)};
+    }
+
+    std::tuple<bool, float, float, float, float>
+    read_data4(uint8_t cmd)
+    {
+        sendPacket(cmd);
+        auto [ok, vals] = readFloats(4);
+        return {ok, round_to_dp(vals[0],4), round_to_dp(vals[1],4), round_to_dp(vals[2],4), round_to_dp(vals[3],4)};
+    }
+
+    /* ---------- High-Level API ---------- */
+
+    // Motion
+    void writeSpeed(float v0, float v1) { write_data2(WRITE_VEL, v0, v1); }
+    void writePWM(float p0, float p1)   { write_data2(WRITE_PWM, p0, p1); }
+
+    std::tuple<bool, float, float> readPos() { return read_data2(READ_POS); }
+    std::tuple<bool, float, float> readVel() { return read_data2(READ_VEL); }
+    std::tuple<bool, float, float> readUVel(){ return read_data2(READ_UVEL); }
+    std::tuple<bool, float, float> readTVel(){ return read_data2(READ_TVEL); }
+
+    std::tuple<bool, float, float, float, float>
+    readMotorData() { return read_data4(READ_MOTOR_DATA); }
+
+    // PID & Control
+    void setKP(float v, uint8_t motor) { write_data1(SET_KP, v, motor); }
+    void setKI(float v, uint8_t motor) { write_data1(SET_KI, v, motor); }
+    void setKD(float v, uint8_t motor) { write_data1(SET_KD, v, motor); }
+
+    std::tuple<bool, float> getKP(uint8_t motor){ return read_data1(GET_KP, motor); }
+    std::tuple<bool, float> getKI(uint8_t motor){ return read_data1(GET_KI, motor); }
+    std::tuple<bool, float> getKD(uint8_t motor){ return read_data1(GET_KD, motor); }
+
+    // Encoder
+    void setPPR(float ppr, uint8_t motor){ write_data1(SET_PPR, ppr, motor); }
+    std::tuple<bool, float> getPPR(uint8_t motor=0){ return read_data1(GET_PPR, motor); }
+
+    // Velocity limits
+    void setMaxVel(float v, uint8_t motor){ write_data1(SET_MAX_VEL, v, motor); }
+    std::tuple<bool, float> getMaxVel(uint8_t motor=0){ return read_data1(GET_MAX_VEL, motor); }
+
+    // Direction & filters
+    void setRDir(float v, uint8_t motor){ write_data1(SET_RDIR, v, motor); }
+    std::tuple<bool, float> getReverseDir(uint8_t motor=0){ return read_data1(GET_RDIR, motor); }
+
+    void setCutoffFreq(float f, uint8_t motor){ write_data1(SET_CUT_FREQ, f, motor); }
+    std::tuple<bool, float> getCutoffFreq(uint8_t motor=0){ return read_data1(GET_CUT_FREQ, motor); }
+
+    // Modes & system
+    void setPidMode(float mode){ write_data1(SET_PID_MODE, mode); }
+    std::tuple<bool, float> getPidMode(){ return read_data1(GET_PID_MODE); }
+
+    void setCmdTimeout(float t){ write_data1(SET_CMD_TIMEOUT, t); }
+    std::tuple<bool, float> getCmdTimeout(){ return read_data1(GET_CMD_TIMEOUT); }
+
+    bool resetParams(){ 
+      bool success;
+      std::tie(success, std::ignore) = read_data1(RESET_PARAMS);
+      return success;
+    }
+    bool clearDataBuffer(){ 
+      bool success;
+      std::tie(success, std::ignore) = read_data1(CLEAR_DATA_BUFFER);
+      return success;
+    }
 
 private:
-  LibSerial::SerialPort serial_conn_;
-  int timeout_ms_;
-
-  // Serial Protocol Command IDs -------------
-  static constexpr uint8_t START_BYTE = 0xAA;
-  static constexpr uint8_t WRITE_VEL = 0x01;
-  static constexpr uint8_t WRITE_PWM = 0x02;
-  static constexpr uint8_t READ_POS = 0x03;
-  static constexpr uint8_t READ_VEL = 0x04;
-  static constexpr uint8_t READ_UVEL = 0x05;
-  static constexpr uint8_t GET_MAX_VEL = 0x14;
-  static constexpr uint8_t SET_PID_MODE = 0x15;
-  static constexpr uint8_t GET_PID_MODE = 0x16;
-  static constexpr uint8_t SET_CMD_TIMEOUT = 0x17;
-  static constexpr uint8_t GET_CMD_TIMEOUT = 0x18;
-  static constexpr uint8_t READ_MOTOR_DATA = 0x2A;
-  static constexpr uint8_t CLEAR_DATA_BUFFER = 0x2C;
-  //---------------------------------------------
-
-  uint8_t calcChecksum(const std::vector<uint8_t>& packet);
-  void send_packet_without_payload(uint8_t cmd);
-  void send_packet_with_payload(uint8_t cmd, const std::vector<uint8_t>& payload);
-  std::tuple<bool, float> read_packet1();
-  std::tuple<bool, float, float> read_packet2();
-  std::tuple<bool, float, float, float, float> read_packet4();
-
-  // ------------------- High-Level Wrappers -------------------
-  void write_data1(uint8_t cmd, float val, uint8_t pos=100);
-  void write_data2(uint8_t cmd, float a, float b);
-  std::tuple<bool, float> read_data1(uint8_t cmd, uint8_t pos=100);
-  std::tuple<bool, float, float> read_data2(uint8_t cmd);
-  std::tuple<bool, float, float, float, float> read_data4(uint8_t cmd);
-
+    LibSerial::SerialPort serial;
+    int timeout_ms_;
 };
 
-} // namespace epmc_serial
-
-
-namespace epmc_serial 
-{
-
-  inline void EPMCSerialClient::connect(const std::string &serial_device, int32_t baud_rate, int32_t timeout_ms)
-  {
-    try {
-      timeout_ms_ = timeout_ms;
-      serial_conn_.Open(serial_device);
-      serial_conn_.SetBaudRate(convert_baud_rate(baud_rate));
-    } catch (const LibSerial::OpenFailed&) {
-        throw std::runtime_error("EPMC: Failed to open serial port");
-    }
-  }
-
-  inline void EPMCSerialClient::disconnect()
-  {
-    serial_conn_.Close();
-  }
-
-  inline bool EPMCSerialClient::connected() const
-  {
-    return serial_conn_.IsOpen();
-  }
-
-  inline void EPMCSerialClient::writePWM(int pwm0, int pwm1)
-  {
-    write_data2(WRITE_PWM, (float)pwm0, (float)pwm1);
-  }
-
-  inline void EPMCSerialClient::writeSpeed(float v0, float v1)
-  {
-    write_data2(WRITE_VEL, v0, v1);
-  }
-
-  inline std::tuple<bool, float, float> EPMCSerialClient::readPos()
-  {
-    bool success; float pos0, pos1;
-    std::tie(success, pos0, pos1) = read_data2(READ_POS);
-    pos0 = round_to_dp(pos0, 4);
-    pos1 = round_to_dp(pos1, 4);
-    return std::make_tuple(success, pos0, pos1);
-  }
-
-  inline std::tuple<bool, float, float> EPMCSerialClient::readVel()
-  {
-    bool success; float v0, v1;
-    std::tie(success, v0, v1) = read_data2(READ_VEL);
-    v0 = round_to_dp(v0, 4);
-    v1 = round_to_dp(v1, 4);
-    return std::make_tuple(success, v0, v1);
-  }
-
-  inline std::tuple<bool, float, float, float, float> EPMCSerialClient::readMotorData()
-  {
-    bool success; float pos0, pos1, v0, v1;
-    std::tie(success, pos0, pos1, v0, v1) = read_data4(READ_MOTOR_DATA);
-    pos0 = round_to_dp(pos0, 4);
-    pos1 = round_to_dp(pos1, 4);
-    v0 = round_to_dp(v0, 4);
-    v1 = round_to_dp(v1, 4);
-    return std::make_tuple(success, pos0, pos1, v0, v1);
-  }
-
-  inline std::tuple<bool, float> EPMCSerialClient::getMaxVel(int motor_no)
-  {
-    bool success; float max_vel;
-    std::tie(success, max_vel) = read_data1(GET_MAX_VEL, (uint8_t)motor_no);
-    max_vel = round_to_dp(max_vel, 4);
-    return std::make_tuple(success, max_vel);
-  }
-
-  inline void EPMCSerialClient::setCmdTimeout(int timeout_ms)
-  {
-    write_data1(SET_CMD_TIMEOUT, (float)timeout_ms);
-  }
-
-  inline std::tuple<bool, int> EPMCSerialClient::getCmdTimeout()
-  {
-    bool success; float timeout_ms;
-    std::tie(success, timeout_ms) = read_data1(GET_CMD_TIMEOUT);
-    return std::make_tuple(success, (int)timeout_ms);
-  }
-
-  inline void EPMCSerialClient::setPidMode(int mode, int motor_no)
-  {
-    write_data1(SET_PID_MODE, (float)mode, (uint8_t)motor_no);
-  }
-
-  inline std::tuple<bool, int> EPMCSerialClient::getPidMode(int motor_no)
-  {
-    bool success; float mode;
-    std::tie(success, mode) = read_data1(GET_PID_MODE, (uint8_t)motor_no);
-    return std::make_tuple(success, (int)mode);
-  }
-
-  inline bool EPMCSerialClient::clearDataBuffer()
-  {
-    bool success;
-    std::tie(success, std::ignore) = read_data1(CLEAR_DATA_BUFFER);
-    return success;
-  }
-
-  // PRIVATE FUNCTIONS
-  inline uint8_t EPMCSerialClient::calcChecksum(const std::vector<uint8_t>& packet) {
-    uint32_t sum = 0;
-    for (auto b : packet) sum += b;
-    return sum & 0xFF;
-  }
-
-  inline void EPMCSerialClient::send_packet_without_payload(uint8_t cmd) {
-    uint8_t len = 0;
-    std::vector<uint8_t> packet = {START_BYTE, cmd, len}; // no payload
-    uint8_t checksum = calcChecksum(packet);
-    packet.push_back(checksum);
-    serial_conn_.Write(packet);
-    serial_conn_.DrainWriteBuffer();
-  }
-
-  inline void EPMCSerialClient::send_packet_with_payload(uint8_t cmd, const std::vector<uint8_t>& payload) {
-    std::vector<uint8_t> packet = {START_BYTE, cmd, (uint8_t)payload.size()};
-    packet.insert(packet.end(), payload.begin(), payload.end());
-    uint8_t checksum = calcChecksum(packet);
-    packet.push_back(checksum);
-    serial_conn_.Write(packet);
-    serial_conn_.DrainWriteBuffer();
-  }
-
-  inline std::tuple<bool, float> EPMCSerialClient::read_packet1() {
-    std::vector<uint8_t> payload;
-    float val;
-    try
-    {
-      serial_conn_.Read(payload, 4, timeout_ms_);
-      if (payload.size() < 4) {
-        // std::cerr << "[EPMC SERIAL ERROR]: Timeout while reading 1 values" << std::endl;
-        return std::make_tuple(false, 0.0);
-      }
-      std::memcpy(&val, payload.data(), sizeof(float)); // little-endian assumed
-      return std::make_tuple(true, val);
-    }
-    catch(const LibSerial::ReadTimeout &e)
-    {
-      // std::cerr << "[LIB SERIAL ERROR]: ReadTimeout" << std::endl;
-      return std::make_tuple(false, 0.0);
-    }
-  }
-
-  inline std::tuple<bool, float, float> EPMCSerialClient::read_packet2() {
-    std::vector<uint8_t> payload;
-    float val0, val1;
-    try
-    {
-      serial_conn_.Read(payload, 8, timeout_ms_);
-      if (payload.size() < 8) {
-        // std::cerr << "[EPMC SERIAL ERROR]: Timeout while reading 2 values" << std::endl;
-        return std::make_tuple(false, 0.0, 0.0);
-      }
-      std::memcpy(&val0, payload.data() + 0, sizeof(float));
-      std::memcpy(&val1, payload.data() + 4, sizeof(float));
-      return std::make_tuple(true, val0, val1);
-    }
-    catch(const LibSerial::ReadTimeout &e)
-    {
-      // std::cerr << "[LIB SERIAL ERROR]: ReadTimeout" << std::endl;
-      return std::make_tuple(false, 0.0, 0.0);
-    }
-  }
-
-  inline std::tuple<bool, float, float, float, float> EPMCSerialClient::read_packet4() {
-    std::vector<uint8_t> payload;
-    float val0, val1, val2, val3;
-    try
-    {
-      serial_conn_.Read(payload, 16, timeout_ms_);
-      if (payload.size() < 16) {
-        // std::cerr << "[EPMC SERIAL ERROR]: Timeout while reading 4 values" << std::endl;
-        return std::make_tuple(false, 0.0, 0.0, 0.0, 0.0);
-      }
-      std::memcpy(&val0, payload.data() + 0, sizeof(float));
-      std::memcpy(&val1, payload.data() + 4, sizeof(float));
-      std::memcpy(&val2, payload.data() + 8, sizeof(float));
-      std::memcpy(&val3, payload.data() + 12, sizeof(float));
-      return std::make_tuple(true, val0, val1, val2, val3);
-    }
-    catch(const LibSerial::ReadTimeout &e)
-    {
-      // std::cerr << "[LIB SERIAL ERROR]: ReadTimeout" << std::endl;
-      return std::make_tuple(false, 0.0, 0.0, 0.0, 0.0);
-    }
-
-      
-  }
-
-  // ------------------- High-Level Wrappers -------------------
-  inline void EPMCSerialClient::write_data1(uint8_t cmd, float val, uint8_t pos) {
-      std::vector<uint8_t> payload(sizeof(uint8_t) + sizeof(float));
-      payload[0] = pos;
-      std::memcpy(&payload[1], &val, sizeof(float));
-      send_packet_with_payload(cmd, payload);
-  }
-
-  inline void EPMCSerialClient::write_data2(uint8_t cmd, float a, float b) {
-      std::vector<uint8_t> payload(2 * sizeof(float));
-      std::memcpy(&payload[0],  &a, sizeof(float));
-      std::memcpy(&payload[4],  &b, sizeof(float));
-      send_packet_with_payload(cmd, payload);
-  }
-
-  inline std::tuple<bool, float> EPMCSerialClient::read_data1(uint8_t cmd, uint8_t pos) {
-      std::vector<uint8_t> payload(sizeof(uint8_t) + sizeof(float));
-      payload[0] = pos;
-      send_packet_with_payload(cmd, payload);
-      bool success; float val;
-      std::tie(success, val) = read_packet1();
-      return std::make_tuple(success, val);
-  }
-
-  inline std::tuple<bool, float, float> EPMCSerialClient::read_data2(uint8_t cmd) {
-      send_packet_without_payload(cmd);
-      bool success; float a, b;
-      std::tie(success, a, b) = read_packet2();
-      return std::make_tuple(success, a, b);
-  }
-
-  inline std::tuple<bool, float, float, float, float> EPMCSerialClient::read_data4(uint8_t cmd) {
-      send_packet_without_payload(cmd);
-      bool success; float a, b, c, d;
-      std::tie(success, a, b, c, d) = read_packet4();
-      return std::make_tuple(success, a, b, c, d);
-  }
-
 }
-
-// #endif
