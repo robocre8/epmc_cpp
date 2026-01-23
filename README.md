@@ -5,7 +5,31 @@ This library helps communicate with the **`Easy PID Motor Controller Module`** (
 
 A simple way to get started is simply to try out and follow the example code in the example folder
 
-## How to Use the Library
+
+## How to Use the .deb Package
+
+#### Prequisite
+- ensure you've already set up your microcomputer or PC system with ROS2
+
+- download and install the epmc-serial-dev pkg. you can also check the [release](https://github.com/robocre8/epmc_serial_cpp/releases/)
+
+[PC (AMD64)](https://github.com/robocre8/epmc_serial_cpp/tree/amd64-build)
+```shell
+wget https://github.com/robocre8/epmc_serial_cpp/releases/download/v1.1.1/epmc-serial-dev_1.1.1_amd64.deb
+```
+```shell
+sudo apt install ./epmc-serial-dev_1.1.1_amd64.deb
+```
+[Raspberry Pi (ARM64)](https://github.com/robocre8/epmc_serial_cpp/tree/arm64-build)
+```shell
+wget https://github.com/robocre8/epmc_serial_cpp/releases/download/v1.1.1/epmc-serial-dev_1.1.1_arm64.deb
+```
+```shell
+sudo apt install ./epmc-serial-dev_1.1.1_arm64.deb
+```
+
+
+## How to Use the Library (build from source)
 - install the libserial-dev package
   > sudo apt-get update
   >
@@ -45,6 +69,9 @@ A simple way to get started is simply to try out and follow the example code in 
 
 - You can follow the pattern used in the example `motor_control.cpp` in your own code.
 
+
+
+ 
 ## Basic Library functions and usage
 
 - connect to epmc_driver shield module
